@@ -30,6 +30,8 @@ namespace ClearMic
             go.AddComponent<MicEchoToggle>();
             go.AddComponent<QualityToggle>();
             go.AddComponent<MicIndicator>();
+            go.AddComponent<OwnerFeature>();
+            go.AddComponent<ClearMicDetection>();
             Object.DontDestroyOnLoad(go);
 
             Debug.Log("[ClearMic] Loaded.");
@@ -224,14 +226,12 @@ namespace ClearMic
 
     public static class MicSettings
     {
-        // NOTE: not touching FrameDuration anymore, leave it at whatever the game has it at,
-        // it was causing more problems than it was worth
         public static void Apply(Recorder mic)
         {
             mic.SamplingRate = Settings.SampleRate;
             mic.Bitrate = Settings.Bitrate;
-            mic.VoiceDetection = false;
-            mic.VoiceDetectionThreshold = 0.0f;
+            mic.VoiceDetection = true;
+            mic.VoiceDetectionThreshold = 0.0001f;
 
             try { mic.ReliableMode = true; } catch { }
 
@@ -261,7 +261,6 @@ namespace ClearMic
             limiter.ReleaseMs = Settings.ReleaseMs;
             limiter.enabled = true;
 
-            // this loudness field is private for some reason so reflection it is
             GorillaSpeakerLoudness[] allGsl = GameObject.FindObjectsByType<GorillaSpeakerLoudness>(FindObjectsSortMode.None);
             foreach (GorillaSpeakerLoudness gsl in allGsl)
             {
@@ -295,18 +294,6 @@ namespace ClearMic
             MicSettings.Apply(__instance);
         }
     }
-
-    [HarmonyPatch(typeof(Recorder), nameof(Recorder.IsCurrentlyTransmitting), MethodType.Getter)]
-    public class TransmitPatch
-    {
-        static bool Prefix(ref bool __result)
-        {
-            if (!PhotonNetwork.InRoom) return true;
-            __result = true;
-            return false;
-        }
-    }
-
     public static class MuteControl
     {
         public static bool Muted => ToggleState.Muted;
@@ -322,8 +309,6 @@ namespace ClearMic
             if (mic == null)
                 return;
 
-            // actually stop the recorder instead of just lying about transmitting state,
-            // that getter override alone wasnt actually muting anything
             mic.IsRecording = !mute;
         }
 

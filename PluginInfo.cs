@@ -4,6 +4,6 @@
     {
         internal const string GUID = "com.xynz.clearmicremaster";
         internal const string Name = "ClearMic REMASTER";
-        internal const string Version = "1.1";
+        internal const string Version = "1.2";
     }
 }
